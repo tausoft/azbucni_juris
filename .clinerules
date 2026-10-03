@@ -1,0 +1,25 @@
+# Cline Rules for "Azbučni Juriš" Game Development
+
+## 1. Core Stack & Environment
+- Language: HTML5, CSS3, Pure JavaScript (ES6+) inside a clean HTML5 Canvas.
+- No heavy frameworks (No React, No Angular). Keep everything modular, lightweight, and vanilla.
+- Platform: Web browser responsive (Must support both desktop mouse/arrows and mobile touch inputs).
+- OS Context: The user is on Linux. If you need to run local commands (like starting a local dev server), use standard Linux bash commands.
+
+## 2. Language, Encoding & Internationalization (i18n)
+- ARCHITECTURE REQUIREMENT: The game architecture MUST support Multi-language / Internationalization (i18n) from Day 1.
+- NEVER hardcode string literals for UI text, labels, buttons, or menus directly into the game loop or components.
+- All interface text must be pulled from a centralized translation dictionary system (e.g., a `translations` object or `languages.js` file).
+- DEFAULT LOCALIZATION: The default language state must be set to Serbian Cyrillic (`sr_cyr`). All user-facing text, game words, questions, and UI elements must render in the Serbian Cyrillic alphabet by default.
+- SCALABILITY: The dictionary must support easy expansion to other language keys (like Serbian Latin `sr_lat` and English `en`).
+- File encoding must always be UTF-8 to prevent Cyrillic character corruption.
+
+## 3. Workflow & AI Constraints (Chunk Limits)
+- You must strictly follow the development roadmap outlined in `PLAN.md`.
+- Build the game incrementally, ONE PHASE AT A TIME. Do not jump ahead unless explicitly told by the user.
+- NEVER write huge, monolithic files in one go that might hit response token limits. Split logic into modular JS files (e.g., `game.js`, `languages.js`, `words.json`, `ui.js`) as the project grows past Phase 1.
+- In early phases, use clean 2D Canvas shapes for drawing (Blue rectangle for Knight, Pink circle for Princess) so we can lock down the game math and state before loading actual image assets.
+
+## 4. Coding Standards
+- Use semantic variables and comment code logic in English (e.g., `let score = 0;`, `function spawnLetter()`).
+- Always implement clean, unified event listeners for both `keydown`/`mousemove` (desktop) and `touchstart`/`touchmove` (mobile/tablet).
