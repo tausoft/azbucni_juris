@@ -6,7 +6,7 @@ import { GameState } from './constants.js';
 import gameManager from './state.js';
 import { renderMenu } from '../components/menu.js';
 import { renderThemeSelect } from '../components/themeSelect.js';
-import { renderGameHUD } from '../components/gameHUD.js';
+import { renderGameHUD, renderWordIntro } from '../components/gameHUD.js';
 import { renderEndScreen } from '../components/endScreen.js';
 import { updatePlayer, drawPlayer } from './player.js';
 import { updateFallingLetters, drawFallingLetters } from './letterSpawner.js';
@@ -72,6 +72,10 @@ export function renderFrame(ctx, canvas, state) {
 
     case GameState.THEME_SELECT:
       renderThemeSelect(ctx, w, h);
+      break;
+
+    case GameState.WORD_INTRO:
+      renderWordIntro(ctx, w, h);
       break;
 
     case GameState.PLAYING:

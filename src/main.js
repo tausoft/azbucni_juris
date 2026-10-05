@@ -14,16 +14,22 @@ import { onEndScreenClick } from './components/endScreen.js';
 import { isStartButtonHit } from './components/menu.js';
 import { isKnightCardHit, isPrincessCardHit } from './components/themeSelect.js';
 import { isEndScreenButtonHit } from './components/endScreen.js';
+import { initHUD } from './components/gameHUD.js';
+import { getRandomWord } from './data/words.js';
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
 /**
- * Set canvas dimensions to window size.
+ * Set canvas dimensions to match the actual rendered display size.
+ * Uses getBoundingClientRect() to ensure buffer and CSS display stay in sync,
+ * preventing HUD coordinate mismatches on mobile/HiDPI screens.
  */
 function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.floor(rect.width * dpr);
+  canvas.height = Math.floor(rect.height * dpr);
 }
 
 /**
@@ -74,6 +80,12 @@ function handleKeyboardInput(e) {
     onThemeSelectClick(gameManager.getTheme());
   } else if ((state === GameState.WORD_COMPLETE || state === GameState.GAME_OVER) && e.key === 'Enter') {
     onEndScreenClick();
+  }
+
+  // Word intro — any key press transitions to PLAYING
+  if (state === GameState.WORD_INTRO) {
+    gameManager.transitionTo(GameState.PLAYING);
+    return;
   }
 
   // Player movement (left/right arrows or A/D keys)
@@ -166,6 +178,12 @@ function handleCanvasTouchEnd(e) {
  */
 function handleInput(x, y) {
   const state = gameManager.getCurrentState();
+
+  // Word intro — any tap/click transitions to PLAYING
+  if (state === GameState.WORD_INTRO) {
+    gameManager.transitionTo(GameState.PLAYING);
+    return;
+  }
 
   switch (state) {
     case GameState.MENU:

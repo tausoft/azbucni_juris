@@ -154,7 +154,7 @@ export function onThemeSelectClick(theme) {
   gameManager.setTheme(theme);
   gameManager.resetGame();
   initNewWord();
-  gameManager.transitionTo(GameState.PLAYING);
+  gameManager.transitionTo(GameState.WORD_INTRO);
 }
 
 let themeButtonBounds = null;

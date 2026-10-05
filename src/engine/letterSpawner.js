@@ -5,7 +5,7 @@
 import { GameConstants, GameState } from './constants.js';
 import gameManager from './state.js';
 import { getPlayerHitbox } from './player.js';
-import { initHUD, revealNextLetter, resetRevealed } from '../components/gameHUD.js';
+import { initHUD, revealNextLetter, resetRevealed, getRevealedCount } from '../components/gameHUD.js';
 import { playBeep } from '../audio/soundEffects.js';
 import { getRandomWord, getDistractorLetters } from '../data/words.js';
 
@@ -74,6 +74,38 @@ function generateLetterPool(word) {
 }
 
 /**
+ * Regenerate the full letter pool for the current word.
+ * Preserves any correct letters already revealed (via getRevealedCount()),
+ * and regenerates only the remaining unrevealed correct letters plus fresh distractors.
+ */
+function regenerateLetterPool() {
+  const revealed = getRevealedCount();
+  const word = currentTargetWord.word;
+  letterPool = [];
+
+  // Add remaining correct letters (those not yet revealed)
+  for (let i = revealed; i < word.length; i++) {
+    letterPool.push({ char: word[i], isCorrect: true });
+  }
+
+  // Add fresh distractors
+  const distCount = Math.max(3, word.length * GameConstants.DISTRACTOR_RATIO);
+  const allLetters = getDistractorLetters();
+  for (let i = 0; i < distCount; i++) {
+    const randomChar = allLetters[Math.floor(Math.random() * allLetters.length)];
+    letterPool.push({ char: randomChar, isCorrect: false });
+  }
+
+  // Shuffle pool
+  for (let i = letterPool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [letterPool[i], letterPool[j]] = [letterPool[j], letterPool[i]];
+  }
+
+  poolIndex = 0;
+}
+
+/**
  * Update falling letters — move them down and spawn new ones.
  */
 export function updateFallingLetters(deltaTime) {
@@ -92,38 +124,54 @@ export function updateFallingLetters(deltaTime) {
     }
   }
 
-  // Spawn new letters periodically
+  // Spawn new letters periodically; regenerate pool when exhausted
   spawnTimer += deltaTime * 1000;
-  if (spawnTimer >= GameConstants.SPAWN_INTERVAL_MS && poolIndex < letterPool.length) {
+  if (spawnTimer >= GameConstants.SPAWN_INTERVAL_MS) {
     spawnLetter();
     spawnTimer = 0;
   }
 
-  // Check if word is complete (guard against re-entry)
-  if (!wordCompleted && currentTargetWord && revealNextLetter() >= currentTargetWord.word.length) {
-    onWordComplete();
-  }
+  // Note: Word completion is now driven by catching correct letters in order,
+  // not by unconditional frame-based advancement. The win guard remains here
+  // to prevent re-entry if onWordComplete() is triggered from elsewhere.
+  // (No action needed — wordCompleted flag prevents double-trigger.)
 }
 
 /**
  * Spawn a single falling letter.
+ * Uses TARGET_LETTER_CHANCE (0.0–1.0) for runtime decision on whether to spawn
+ * a target letter or a distractor, replacing the static DISTRACTOR_RATIO pool approach.
  */
 function spawnLetter() {
-  if (poolIndex >= letterPool.length) return;
-
   const canvasWidth = window.innerWidth;
-  const letterData = letterPool[poolIndex];
+
+  // Decide whether to spawn a target letter or a distractor
+  const isTarget = Math.random() < GameConstants.TARGET_LETTER_CHANCE;
+  const revealed = getRevealedCount();
+  const word = currentTargetWord?.word;
+
+  let char, isCorrect;
+
+  if (isTarget && word && revealed < word.length) {
+    // Spawn the next unrevealed target letter
+    char = word[revealed];
+    isCorrect = true;
+  } else {
+    // Spawn a distractor
+    const allLetters = getDistractorLetters();
+    char = allLetters[Math.floor(Math.random() * allLetters.length)];
+    isCorrect = false;
+  }
+
   const radius = Math.max(20, canvasWidth * GameConstants.LETTER_RADIUS_RATIO);
 
   fallingLetters.push({
     x: Math.random() * (canvasWidth - radius * 2) + radius,
     y: -radius * 2,
     radius,
-    char: letterData.char,
-    isCorrect: letterData.isCorrect,
+    char,
+    isCorrect,
   });
-
-  poolIndex++;
 }
 
 /**
@@ -157,21 +205,31 @@ export function drawFallingLetters(ctx) {
  */
 export function checkCollisions() {
   const hitbox = getPlayerHitbox();
-  if (!hitbox) return false;
+  if (!hitbox) return [];
 
-  let caughtAny = false;
+  let caughtLetters = [];
 
   for (let i = fallingLetters.length - 1; i >= 0; i--) {
     const letter = fallingLetters[i];
-    const dx = letter.x - (hitbox.x + hitbox.width / 2);
-    const dy = letter.y - (hitbox.y + hitbox.height / 2);
-    const distance = Math.sqrt(dx * dx + dy * dy);
 
-    if (distance < letter.radius + Math.min(hitbox.width, hitbox.height) / 2) {
-      // Collision detected
+    // Tight circle-to-rectangle bounding-box overlap test.
+    // FIX: Old code used inflated circle-to-circle distance:
+    //   distance < letter.radius + Math.min(hitbox.width, hitbox.height) / 2
+    // which created a ~90px detection radius (54px hitbox inflation + 36px letter).
+    // New approach finds closest point on the rectangle to circle center and checks
+    // if that distance is less than the letter radius — collision only at actual overlap.
+    const closestX = Math.max(hitbox.x, Math.min(letter.x, hitbox.x + hitbox.width));
+    const closestY = Math.max(hitbox.y, Math.min(letter.y, hitbox.y + hitbox.height));
+
+    const dx = letter.x - closestX;
+    const dy = letter.y - closestY;
+    const distanceSquared = dx * dx + dy * dy;
+
+    if (distanceSquared < letter.radius * letter.radius) {
+      // Collision detected (tight bounding-box overlap)
       if (letter.isCorrect) {
         playBeep('catch');
-        caughtAny = true;
+        caughtLetters.push(letter.char);
       } else {
         playBeep('miss');
         gameManager.loseLife();
@@ -180,18 +238,18 @@ export function checkCollisions() {
         }
       }
 
-      // Remove letter from pool
+      // Remove letter from pool immediately to prevent re-triggering
       fallingLetters.splice(i, 1);
     }
   }
 
-  return caughtAny;
+  return caughtLetters;
 }
 
 /**
  * Handle word completion.
  */
-function onWordComplete() {
+export function onWordComplete() {
   // Prevent re-entry if already completed
   if (wordCompleted) return;
   wordCompleted = true;
@@ -210,7 +268,7 @@ function onWordComplete() {
  */
 function onGameOver() {
   playBeep('lose');
-  gameManager.transitionTo('game_over');
+  gameManager.transitionTo(GameState.GAME_OVER);
 }
 
 /**

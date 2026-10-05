@@ -18,6 +18,7 @@ const translations = {
     score: { sr_cyr: 'Бодови', sr_lat: 'Bodovi', en: 'Score' },
     lives: { sr_cyr: 'Животи', sr_lat: 'Životi', en: 'Lives' },
     progress: { sr_cyr: 'Напредак', sr_lat: 'Napredak', en: 'Progress' },
+    startPrompt: { sr_cyr: 'Притисни било који тастер за почетак', sr_lat: 'Pritisni bilo koji taster za početak', en: 'Press any key to start' },
   },
   wordComplete: {
     win: { sr_cyr: 'Честитам! Реч је завршена!', sr_lat: 'Čestitam! Reč je završena!', en: 'Congratulations! Word complete!' },

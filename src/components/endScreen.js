@@ -7,6 +7,7 @@ import gameManager from '../engine/state.js';
 import { GameState } from '../engine/constants.js';
 import { playBeep } from '../audio/soundEffects.js';
 import { initNewWord } from '../engine/letterSpawner.js';
+import { resetRevealed } from '../components/gameHUD.js';
 
 let endScreenType = null;
 
@@ -76,6 +77,8 @@ export function isEndScreenButtonHit(x, y) {
 export function onEndScreenClick() {
   playBeep('catch');
   if (endScreenType === 'win') {
+    // Reset revealed state for the new word (initNewWord handles this, but be explicit)
+    resetRevealed();
     // Start next word before transitioning to PLAYING
     initNewWord();
     gameManager.transitionTo(GameState.PLAYING);

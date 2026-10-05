@@ -33,9 +33,10 @@ export const GameConstants = {
   SPAWN_INTERVAL_MS: 1200,     // ms between letter spawns
   LETTER_POOL_SIZE_RATIO: 0.4, // pool = targetWord length * this ratio (min 3)
   DISTRACTOR_RATIO: 3,         // for every 1 correct letter, 3 distractors
+  TARGET_LETTER_CHANCE: 0.35,  // probability (0.0–1.0) that a spawned letter is a target letter (runtime spawn decision)
 
   // HUD
-  HUD_HEIGHT_RATIO: 0.12,      // top HUD area as % of canvas height
+  HUD_HEIGHT_RATIO: 0.25,      // top HUD area as % of canvas height
   SCORE_POSITION_Y_RATIO: 0.03,
 
   // Difficulty

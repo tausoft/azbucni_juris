@@ -42,32 +42,100 @@ export function getRevealedCount() {
 }
 
 /**
- * Render the game HUD (target word with blank slots, score).
+ * Render the word intro overlay — blurred background, centered word, prompt text.
+ */
+export function renderWordIntro(ctx, w, h) {
+  const theme = gameManager.getTheme();
+
+  // --- Draw blurred background ---
+  ctx.save();
+  ctx.filter = 'blur(8px)';
+
+  if (theme === 'knight') {
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, '#1a5276');
+    grad.addColorStop(1, '#2e86c1');
+    ctx.fillStyle = grad;
+  } else {
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, '#6c3483');
+    grad.addColorStop(1, '#a569bd');
+    ctx.fillStyle = grad;
+  }
+  ctx.fillRect(-20, -20, w + 40, h + 40);
+  ctx.restore();
+
+  // --- Darken overlay ---
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+  ctx.fillRect(0, 0, w, h);
+
+  // --- Centered target word (large) ---
+  const wordFontSize = Math.max(48, w * 0.1);
+  ctx.font = `bold ${wordFontSize}px "Segoe UI", Arial, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Shadow for depth
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+  ctx.fillText(currentWord || '', w / 2 + 3, h * 0.4 + 3);
+
+  // Main text
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(currentWord || '', w / 2, h * 0.4);
+
+  // --- Prompt text below (smaller) ---
+  const promptText = t('hud.startPrompt');
+  const promptFontSize = Math.max(24, wordFontSize * 0.55);
+  ctx.font = `${promptFontSize}px "Segoe UI", Arial, sans-serif`;
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+  ctx.fillText(promptText, w / 2, h * 0.4 + wordFontSize * 0.8);
+}
+
+/**
+ * Render the game HUD (target word above slots, score display).
  */
 export function renderGameHUD(ctx, w, h) {
   const hudHeight = h * GameConstants.HUD_HEIGHT_RATIO;
-  const targetWord = t('hud.targetWord');
+  const targetWordLabel = t('hud.targetWord');
 
   // HUD background bar
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
   ctx.fillRect(0, 0, w, hudHeight);
 
-  // Target word label
-  const labelFontSize = Math.max(16, w * 0.025);
-  ctx.font = `bold ${labelFontSize}px "Segoe UI", Arial, sans-serif`;
+  // Score display (top-right)
+  const scoreFontSize = Math.max(16, w * 0.025);
+  ctx.font = `bold ${scoreFontSize}px "Segoe UI", Arial, sans-serif`;
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#f1c40f';
+  ctx.fillText(`${t('hud.score')}: ${gameManager.getScore()}`, w * 0.98, hudHeight * 0.12);
+
+  // Lives display (top-left)
+  const lives = gameManager.getLives();
+  const livesText = `${t('hud.lives')}: ${'❤️'.repeat(lives)}${'🖤'.repeat(Math.max(0, GameConstants.MAX_LIVES - lives))}`;
+  ctx.font = `bold ${scoreFontSize}px "Segoe UI", Arial, sans-serif`;
   ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
   ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-  ctx.fillText(targetWord, w * 0.02, h * 0.04);
+  ctx.fillText(livesText, w * 0.02, hudHeight * 0.12);
+
+  // --- Target word displayed above blank slots (top-right area of HUD) ---
+  if (currentWord) {
+    const wordFontSize = Math.max(20, hudHeight * 0.28);
+    ctx.font = `bold ${wordFontSize}px "Segoe UI", Arial, sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(currentWord, w * 0.98, hudHeight * 0.3);
+    ctx.textBaseline = 'alphabetic';
+  }
 
   // Word slots with blank/revealed letters
   const slotCount = currentWord ? currentWord.length : 0;
-  const slotWidth = Math.min(w * 0.08, 60);
-  const slotHeight = Math.max(40, h * 0.05);
-  const slotGap = 8;
+  const slotWidth = Math.min(w * 0.06, 50);
+  const slotHeight = Math.max(36, hudHeight * 0.35);
+  const slotGap = 6;
   const totalSlotsWidth = slotCount * slotWidth + (slotCount - 1) * slotGap;
   const startX = (w - totalSlotsWidth) / 2;
-  const slotY = h * 0.1;
+  const slotY = hudHeight * 0.55;
 
   for (let i = 0; i < slotCount; i++) {
     const slotX = startX + i * (slotWidth + slotGap);
@@ -86,27 +154,13 @@ export function renderGameHUD(ctx, w, h) {
     ctx.stroke();
 
     // Letter text
-    const letterFontSize = Math.max(20, slotWidth * 0.55);
+    const letterFontSize = Math.max(18, slotWidth * 0.5);
     ctx.font = `bold ${letterFontSize}px "Segoe UI", Arial, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = isRevealed ? '#ffffff' : 'rgba(255, 255, 255, 0.3)';
     ctx.fillText(isRevealed ? letter : '_', slotX + slotWidth / 2, slotY + slotHeight / 2);
   }
-
-  // Score display (top-right)
-  const score = gameManager.getScore();
-  const scoreText = `${t('hud.score')}: ${score}`;
-  ctx.font = `bold ${labelFontSize}px "Segoe UI", Arial, sans-serif`;
-  ctx.textAlign = 'right';
-  ctx.fillStyle = '#f1c40f';
-  ctx.fillText(scoreText, w * 0.98, h * 0.04);
-
-  // Lives display (top-left, below label)
-  const lives = gameManager.getLives();
-  const livesText = `${t('hud.lives')}: ${'❤️'.repeat(lives)}${'🖤'.repeat(Math.max(0, GameConstants.MAX_LIVES - lives))}`;
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-  ctx.fillText(livesText, w * 0.02, h * 0.08);
 }
 
 /**
