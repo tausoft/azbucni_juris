@@ -12,16 +12,16 @@ Building on the **proof-of-concept** in `player.js` (static sprite render), this
 
 ### Steps
 
-- [ ] Restore `import { GameConstants } from './constants.js';` in `player.js`
-- [ ] Update `initPlayer(canvasW, canvasH)` to:
+- [x] Restore `import { GameConstants } from './constants.js';` in `player.js`
+- [x] Update `initPlayer(canvasW, canvasH)` to:
   - Calculate `width = canvasW * GameConstants.PLAYER_WIDTH_RATIO` (6%)
   - Calculate `height = canvasH * GameConstants.PLAYER_HEIGHT_RATIO` (8%)
   - Set `x = canvasW / 2 - width / 2` (centered horizontally)
   - Set `y = canvasH * 0.82` (near bottom, matching original design)
-- [ ] Store `canvasWidth`/`canvasHeight` as module-level variables for bounds checking
-- [ ] Update `draw(ctx)` to scale sprite frame to calculated `width × height` instead of raw 211×240
-- [ ] Update `getPlayerHitbox()` to return dynamic `{ width, height }` instead of fixed `60×60`
-- [ ] Verify sprite renders centered at bottom with correct aspect ratio
+- [x] Store `canvasWidth`/`canvasHeight` as module-level variables for bounds checking
+- [x] Update `draw(ctx)` to scale sprite frame to calculated `width × height` instead of raw 211×240
+- [x] Update `getPlayerHitbox()` to return dynamic `{ width, height }` instead of fixed `60×60`
+- [x] Verify sprite renders centered at bottom with correct aspect ratio
 
 ### Dependencies
 - None — standalone fix
@@ -34,14 +34,14 @@ Building on the **proof-of-concept** in `player.js` (static sprite render), this
 
 ### Steps
 
-- [ ] Add `this.speed = canvasW * GameConstants.PLAYER_SPEED_RATIO` (30% of width/sec)
-- [ ] Add `this.direction: 0` state (−1 left, 0 none, +1 right)
-- [ ] Restore `updatePlayer(deltaTime)` with delta-time clamping logic
-- [ ] Restore `setDirection(dir)` and `stopPlayer()` module-level functions
-- [ ] Wire input in `main.js`:
+- [x] Add `this.speed = canvasW * GameConstants.PLAYER_SPEED_RATIO` (30% of width/sec)
+- [x] Add `this.direction: 0` state (−1 left, 0 none, +1 right)
+- [x] Restore `updatePlayer(deltaTime)` with delta-time clamping logic
+- [x] Restore `setDirection(dir)` and `stopPlayer()` module-level functions
+- [x] Wire input in `main.js`:
   - Keyboard: `keydown`/`keyup` listeners for Arrow keys + WASD → call `setDirection()` / `stopPlayer()`
   - Touch: `touchstart`/`touchend` on canvas → set direction based on touch X relative to player center
-- [ ] Verify smooth movement at any frame rate (delta-time based)
+- [x] Verify smooth movement at any frame rate (delta-time based)
 
 ### Dependencies
 - Phase 1 complete (player must exist at correct position first)
