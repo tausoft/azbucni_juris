@@ -54,12 +54,12 @@ Building on the **proof-of-concept** in `player.js` (static sprite render), this
 
 ### Steps
 
-- [ ] Add animation state to `Player` (currentFrame, animationTimer, frameIndex, fps)
-- [ ] Define frame groups from JSON: `idle×4`, `run×6`, `victory×6`, `victory-idle×2`
-- [ ] Implement `updateAnimation(deltaTime)` — advances frame index based on timer/fps, loops frames
-- [ ] Update `draw(ctx)` to render current frame from animation group (not hardcoded key)
-- [ ] Add `setCurrentAnimation(groupName)` method (e.g., `'run'` when direction ≠ 0)
-- [ ] Verify smooth frame cycling for idle/run states
+- [x] Add animation state to `Player` (currentFrame, animationTimer, frameIndex, fps)
+- [x] Define frame groups from JSON: `idle×4`, `run×6`, `victory×6`, `victory-idle×2`
+- [x] Implement `updateAnimation(deltaTime)` — advances frame index based on timer/fps, loops frames
+- [x] Update `draw(ctx)` to render current frame from animation group (not hardcoded key)
+- [x] Add `setCurrentAnimation(groupName)` method (e.g., `'run'` when direction ≠ 0)
+- [x] Verify smooth frame cycling for idle/run states
 
 ### Dependencies
 - Phase 2 complete (need movement to trigger run animation)
