@@ -35,6 +35,7 @@ class Player {
     // Movement state (Phase 2)
     this.speed = 0;           // px/sec — set in initPlayer()
     this.direction = 0;       // -1 left, 0 none, +1 right
+    this.facing = 1;          // 1 = right, -1 = left — persists after stop
 
     // Animation state (Phase 3)
     this.currentAnimation = ANIM.idle;   // active animation group name
@@ -200,19 +201,48 @@ class Player {
       ctx.fillRect(this.x, this.y, this.width, this.height);
       return;
     }
-
     const frame = group[this.frameIndex];
-    ctx.drawImage(
-      this.image,
-      frame.x, frame.y, frame.w, frame.h, // source
-      this.x, this.y, this.width, this.height, // dest
-    );
+
+    this._lastFacing = this.facing;
+
+    if (this.facing === -1) {
+      // Flip horizontally when facing left
+      const pivotX = this.x + this.width;
+
+      ctx.save();
+      ctx.translate(pivotX, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(
+        this.image,
+        frame.x, frame.y, frame.w, frame.h, // source
+        0, this.y, this.width, this.height, // dest (extends left from flipped origin)
+      );
+      ctx.restore();                       // ← restore BEFORE any debug overlay
+    } else {
+      ctx.drawImage(
+        this.image,
+        frame.x, frame.y, frame.w, frame.h, // source
+        this.x, this.y, this.width, this.height, // dest
+      );
+    }
+
+    // --- Debug overlay: draw logical hitbox as green wireframe ---
+    // Must be OUTSIDE the flipped context so it appears at the correct screen position.
+    if (typeof DEBUG_DRAW_HITBOX !== 'undefined' && DEBUG_DRAW_HITBOX) {
+      ctx.strokeStyle = '#0f0';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(this.x, this.y, this.width, this.height);
+    }
   }
 }
 
 // --- Module-level canvas dimensions (for bounds checking in future phases) ---
 let canvasWidth = 0;
 let canvasHeight = 0;
+
+// --- Debug: track position deltas between frames (fires only on teleport events) ---
+let _lastPlayerX = null;
+const TELEPORT_THRESHOLD = 10; // px — log only when change exceeds this
 
 // --- Module-level API (mirrors existing gameLoop.js imports) ---
 let player = null;
@@ -240,11 +270,24 @@ export function initPlayer(canvasW, canvasH) {
   // Set movement speed (Phase 2)
   player.speed = canvasW * GameConstants.PLAYER_SPEED_RATIO;   // 30% of canvas width per sec
 
+  _lastPlayerX = null; // reset delta tracker
   return player;
 }
 
 export function updatePlayer(deltaTime) {
   if (!player) return;
+
+  // --- Debug: detect teleportation (fires only when change > threshold) ---
+  if (_lastPlayerX !== null && Math.abs(player.x - _lastPlayerX) > TELEPORT_THRESHOLD) {
+    console.group('🚨 TELEPORT DETECTED — position jumped!');
+    console.log('Previous frame X:', _lastPlayerX);
+    console.log('Current frame X: ', player.x);
+    console.log('Delta:           ', player.x - _lastPlayerX, 'px');
+    console.log('Direction:       ', player.direction);
+    console.log('Animation:       ', player.currentAnimation);
+    console.groupEnd();
+  }
+  _lastPlayerX = player.x;
 
   // Always update animation (even when stationary — idle loops)
   player.updateAnimation(deltaTime);
@@ -288,6 +331,7 @@ export function setDirection(dir) {
   if (!player) return;
   // Clamp to [-1, +1] range
   player.direction = Math.max(-1, Math.min(1, dir));
+  if (dir !== 0) player.facing = dir;
 }
 
 export function stopPlayer() {
@@ -297,6 +341,11 @@ export function stopPlayer() {
 
 export function getPlayerHitbox() {
   return player ? { x: player.x, y: player.y, width: player.width, height: player.height } : null;
+}
+
+// --- Debug accessor (used by gameLoop.js when DEBUG_DRAW_HITBOX is enabled) ---
+export function getDebugPlayerX() {
+  return player ? player.x : null;
 }
 
 // --- Victory trigger (Phase 3: one-shot animation sequence) ---

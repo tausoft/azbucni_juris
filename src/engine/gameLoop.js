@@ -15,6 +15,9 @@ import { updateScoring } from './scoring.js';
 let animationId = null;
 let lastTime = 0;
 
+// --- Debug toggle: set DEBUG_DRAW_HITBOX = true in browser console to enable ---
+window.DEBUG_DRAW_HITBOX = false;
+
 /**
  * Start the game loop with requestAnimationFrame.
  */
