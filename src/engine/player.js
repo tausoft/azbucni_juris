@@ -37,6 +37,12 @@ class Player {
     this.direction = 0;       // -1 left, 0 none, +1 right
     this.facing = 1;          // 1 = right, -1 = left — persists after stop
 
+    // --- Direction flip slide (Phase: SMOOTH-TRANSITION PT1) ---
+    this.flipSlideTimer = 0;                       // tracks reversal progress (seconds)
+    this.flipSlideDuration = GameConstants.TRANSITIONS.FLIP_SLIDE_DURATION;
+    this.isFlipping = false;                       // true during active flip
+    this.flipSlideDirection = 0;                   // target direction once slide completes
+
     // Animation state (Phase 3)
     this.currentAnimation = ANIM.idle;   // active animation group name
     this.frameIndex = 0;              // current frame within the active group
@@ -44,6 +50,14 @@ class Player {
     this.groups = {};                 // parsed frame groups: { idle: [...], run: [...], ... }
     this._framesBuilt = false;        // guard — true once _buildFrameGroups() completes
     this._victoryTriggered = false;   // one-shot flag for victory animation sequence
+
+    // --- Animation crossfade (Phase: SMOOTH-TRANSITION PT2) ---
+    this.crossfading = false;           // true during active crossfade
+    this.crossfadeTimer = 0;            // elapsed time in current crossfade (seconds)
+    this.crossfadeDuration = GameConstants.TRANSITIONS.ANIMATION_CROSSFADE_DURATION;
+    this.prevFrame = null;              // previous animation frame data for blending
+    this.prevGroup = null;              // previous animation group name
+    this.prevAnimation = null;          // previous animation name (for debug/logging)
 
     // Loaded assets (populated asynchronously)
     this.json = null;
@@ -163,6 +177,7 @@ class Player {
 
   /**
    * Switch to a named animation group and reset timer/frameIndex.
+   * If the new group differs from the current one, triggers a crossfade.
    */
   setCurrentAnimation(name) {
     if (!this.groups[name]) {
@@ -170,25 +185,106 @@ class Player {
       return;
     }
 
-    this.currentAnimation = name;
+    // If same animation, just reset (used for victory loop re-trigger)
+    if (name === this.currentAnimation) {
+      this.frameIndex = 0;
+      this.animationTimer = 0;
+      return;
+    }
+
+    // Trigger crossfade to new animation group
+    this.crossfadeTo(name);
+  }
+
+  /**
+   * Start a crossfade from the current frame to a new animation group.
+   * Saves the previous frame for alpha-blended rendering during transition.
+   */
+  crossfadeTo(newGroupName) {
+    if (this.crossfading) return; // Already crossfading — skip
+
+    // Save the current frame for blending
+    const currentGroup = this.groups[this.currentAnimation];
+    if (currentGroup && currentGroup[this.frameIndex]) {
+      this.prevFrame = currentGroup[this.frameIndex];
+      this.prevGroup = this.currentAnimation;
+      this.prevAnimation = newGroupName;
+    }
+
+    // Start the new animation
+    this.currentAnimation = newGroupName;
     this.frameIndex = 0;
     this.animationTimer = 0;
+
+    // Enable crossfade
+    this.crossfading = true;
+    this.crossfadeTimer = 0;
+  }
+
+  /**
+   * Update the crossfade timer. Returns true when crossfade is complete.
+   */
+  updateCrossfade(deltaTime) {
+    if (!this.crossfading) return false;
+
+    this.crossfadeTimer += deltaTime;
+    if (this.crossfadeTimer >= this.crossfadeDuration) {
+      // Crossfade complete — clean up state
+      this.crossfading = false;
+      this.crossfadeTimer = 0;
+      this.prevFrame = null;
+      this.prevGroup = null;
+      this.prevAnimation = null;
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Get the eased alpha value for crossfade blending.
+   * Uses smoothstep (t² × (3 - 2t)) for natural-feeling transition.
+   */
+  getCrossfadeAlpha() {
+    if (!this.crossfading) return 0;
+    const t = Math.min(this.crossfadeTimer / this.crossfadeDuration, 1.0);
+    // Smoothstep easing
+    return t * t * (3 - 2 * t);
+  }
+
+  /**
+   * Draw a single frame at the player's position.
+   * Handles flip-horizontal via canvas transform when facing left.
+   */
+  _drawSingleFrame(ctx, frame) {
+    if (this.facing === -1) {
+      // Flip horizontally when facing left
+      const pivotX = this.x + this.width;
+      ctx.save();
+      ctx.translate(pivotX, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(
+        this.image,
+        frame.x, frame.y, frame.w, frame.h, // source
+        0, this.y, this.width, this.height, // dest (extends left from flipped origin)
+      );
+      ctx.restore();
+    } else {
+      ctx.drawImage(
+        this.image,
+        frame.x, frame.y, frame.w, frame.h, // source
+        this.x, this.y, this.width, this.height, // dest
+      );
+    }
   }
 
   /**
    * Draw method called every frame by the game loop.
    * Renders the active animation frame at the player's current position.
+   * During crossfade, blends old and new frames via globalAlpha.
    */
   draw(ctx) {
-    if (!this.isReady) {
+    if (!this.isReady || !this._framesBuilt) {
       // Fallback: draw a blue rectangle so we know the render loop is running
-      ctx.fillStyle = '#3498db';
-      ctx.fillRect(this.x, this.y, this.width, this.height);
-      return;
-    }
-
-    if (!this._framesBuilt) {
-      // JSON not loaded yet — blue rectangle fallback
       ctx.fillStyle = '#3498db';
       ctx.fillRect(this.x, this.y, this.width, this.height);
       return;
@@ -203,31 +299,28 @@ class Player {
     }
     const frame = group[this.frameIndex];
 
-    this._lastFacing = this.facing;
+    // --- Crossfade rendering: blend old and new frames ---
+    if (this.crossfading && this.prevFrame) {
+      const alpha = this.getCrossfadeAlpha();
+      const invAlpha = 1.0 - alpha;
 
-    if (this.facing === -1) {
-      // Flip horizontally when facing left
-      const pivotX = this.x + this.width;
+      // Draw previous frame (fading out)
+      ctx.globalAlpha = invAlpha;
+      this._drawSingleFrame(ctx, this.prevFrame);
 
-      ctx.save();
-      ctx.translate(pivotX, 0);
-      ctx.scale(-1, 1);
-      ctx.drawImage(
-        this.image,
-        frame.x, frame.y, frame.w, frame.h, // source
-        0, this.y, this.width, this.height, // dest (extends left from flipped origin)
-      );
-      ctx.restore();                       // ← restore BEFORE any debug overlay
+      // Draw current frame (fading in)
+      ctx.globalAlpha = alpha;
+      this._drawSingleFrame(ctx, frame);
+
+      // Reset globalAlpha to avoid affecting subsequent draws (HUD, letters, etc.)
+      ctx.globalAlpha = 1.0;
     } else {
-      ctx.drawImage(
-        this.image,
-        frame.x, frame.y, frame.w, frame.h, // source
-        this.x, this.y, this.width, this.height, // dest
-      );
+      // Normal rendering — single frame
+      this._drawSingleFrame(ctx, frame);
     }
 
     // --- Debug overlay: draw logical hitbox as green wireframe ---
-    // Must be OUTSIDE the flipped context so it appears at the correct screen position.
+    // Must be OUTSIDE any alpha changes so it appears at the correct screen position.
     if (typeof DEBUG_DRAW_HITBOX !== 'undefined' && DEBUG_DRAW_HITBOX) {
       ctx.strokeStyle = '#0f0';
       ctx.lineWidth = 1;
@@ -289,8 +382,43 @@ export function updatePlayer(deltaTime) {
   }
   _lastPlayerX = player.x;
 
+  // --- Direction flip slide update (Phase: SMOOTH-TRANSITION PT1) ---
+  if (player.isFlipping) {
+    player.flipSlideTimer += deltaTime;
+    const t = Math.min(player.flipSlideTimer / player.flipSlideDuration, 1.0);
+
+    // Ease-out cubic for natural deceleration → acceleration curve
+    const eased = 1 - Math.pow(1 - t, 3);
+
+    // Calculate slide range: how far the character drifts during reversal
+    const slideRange = player.speed * player.flipSlideDuration * 0.5;
+
+    // The flip center is where the character briefly pauses (direction-neutral point)
+    const flipCenter = player.x - (player.direction * slideRange);
+
+    // Slide toward new target: from flipCenter back along the original direction,
+    // then accelerate into the new direction
+    const newTargetX = flipCenter + (player.flipSlideDirection * slideRange * eased);
+
+    // Apply slide — character drifts during reversal
+    player.x += (newTargetX - player.x) * deltaTime * 8;
+
+    // Check if slide is complete
+    if (t >= 1.0) {
+      player.direction = player.flipSlideDirection;
+      player.facing = player.flipSlideDirection;
+      player.isFlipping = false;
+      player.flipSlideTimer = 0;
+      // Snap to clean position
+      player.x = flipCenter + (player.flipSlideDirection * slideRange);
+    }
+  }
+
   // Always update animation (even when stationary — idle loops)
   player.updateAnimation(deltaTime);
+
+  // Update crossfade timer (if active)
+  player.updateCrossfade(deltaTime);
 
   // Auto-transition idle ↔ run based on movement direction
   if (player.direction !== 0 && player.currentAnimation === ANIM.idle) {
@@ -329,8 +457,23 @@ export function drawPlayer(ctx) {
 
 export function setDirection(dir) {
   if (!player) return;
-  // Clamp to [-1, +1] range
-  player.direction = Math.max(-1, Math.min(1, dir));
+
+  dir = Math.max(-1, Math.min(1, dir));
+
+  // If direction is changing to opposite of current, trigger flip slide
+  if (player.direction !== 0 && player.direction !== dir && dir !== 0) {
+    // Only trigger if moving in the opposite direction (not just starting/stopping)
+    if (player.direction * dir < 0) {
+      player.isFlipping = true;
+      player.flipSlideTimer = 0;
+      player.flipSlideDirection = dir;
+      // Do NOT change player.direction yet — wait for slide to complete
+      return;
+    }
+  }
+
+  // Normal direction set (no flip needed)
+  player.direction = dir;
   if (dir !== 0) player.facing = dir;
 }
 
