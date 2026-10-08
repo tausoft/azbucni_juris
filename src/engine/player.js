@@ -59,6 +59,10 @@ class Player {
     this.prevGroup = null;              // previous animation group name
     this.prevAnimation = null;          // previous animation name (for debug/logging)
 
+    // --- Lerp visual position smoothing (Phase: SMOOTH-TRANSITION PT3) ---
+    this.smoothedX = this.x;           // Visual X — rendered position (lerped toward logical X)
+    this.lerpFactor = GameConstants.TRANSITIONS.LERP_FACTOR;  // tracking speed (~12.0)
+
     // Loaded assets (populated asynchronously)
     this.json = null;
     this.image = null;
@@ -258,7 +262,7 @@ class Player {
   _drawSingleFrame(ctx, frame) {
     if (this.facing === -1) {
       // Flip horizontally when facing left
-      const pivotX = this.x + this.width;
+      const pivotX = this.smoothedX + this.width;
       ctx.save();
       ctx.translate(pivotX, 0);
       ctx.scale(-1, 1);
@@ -272,7 +276,7 @@ class Player {
       ctx.drawImage(
         this.image,
         frame.x, frame.y, frame.w, frame.h, // source
-        this.x, this.y, this.width, this.height, // dest
+        this.smoothedX, this.y, this.width, this.height, // dest
       );
     }
   }
@@ -439,8 +443,8 @@ export function updatePlayer(deltaTime) {
     }
   }
 
-  // Movement (only when direction set)
-  if (player.direction === 0) return;
+  // Movement (only when direction set and not in middle of flip slide)
+  if (player.direction === 0 && !player.isFlipping) return;
 
   // Delta-time movement: speed (px/sec) × time elapsed (sec)
   const moveAmount = player.speed * deltaTime * player.direction;
@@ -449,6 +453,14 @@ export function updatePlayer(deltaTime) {
   // Clamp to canvas bounds (keep sprite fully inside)
   const halfW = player.width / 2;
   player.x = Math.max(halfW, Math.min(canvasWidth - halfW, player.x));
+
+  // --- Lerp: smooth visual position toward logical position ---
+  const lerpDelta = (player.x - player.smoothedX) *
+                    Math.min(player.lerpFactor * deltaTime, 1.0);
+  player.smoothedX += lerpDelta;
+
+  // Safety clamp on smoothedX to prevent runaway drift during edge cases
+  player.smoothedX = Math.max(halfW, Math.min(canvasWidth - halfW, player.smoothedX));
 }
 
 export function drawPlayer(ctx) {
@@ -488,7 +500,8 @@ export function getPlayerHitbox() {
 
 // --- Debug accessor (used by gameLoop.js when DEBUG_DRAW_HITBOX is enabled) ---
 export function getDebugPlayerX() {
-  return player ? player.x : null;
+  if (!player) return null;
+  return { logical: player.x, visual: player.smoothedX };
 }
 
 // --- Victory trigger (Phase 3: one-shot animation sequence) ---

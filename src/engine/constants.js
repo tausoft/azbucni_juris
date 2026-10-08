@@ -64,5 +64,6 @@ export const GameConstants = {
       FLIP_SLIDE_DURATION: 0.15,       // 150ms full reversal
       MIN_DIRECTION_THRESHOLD: 0.01,    // prevent micro-flips
       ANIMATION_CROSSFADE_DURATION: 0.1,     // 100ms animation crossfade (Phase: SMOOTH-TRANSITION PT2)
+      LERP_FACTOR: 12.0,               // visual position tracking speed (~12.0)
     },
 };
