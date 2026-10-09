@@ -340,7 +340,20 @@ export function stopPlayer() {
 }
 
 export function getPlayerHitbox() {
-  return player ? { x: player.x, y: player.y, width: player.width, height: player.height } : null;
+  if (!player) return null;
+
+  // Use the stored canvas-relative dimensions (set in initPlayer) as the hitbox.
+  // This ensures the collision hitbox always matches what's drawn on screen:
+  //   width  = canvasW * PLAYER_WIDTH_RATIO  (6% of canvas width)
+  //   height = canvasH * PLAYER_HEIGHT_RATIO  (8% of canvas height)
+  // The hitbox must match the sprite's DESTINATION dimensions in drawImage(),
+  // not the source frame dimensions (211×240), which get stretched to fit.
+  return {
+    x: player.x,
+    y: player.y,
+    width: canvasWidth * GameConstants.PLAYER_WIDTH_RATIO,
+    height: canvasHeight * GameConstants.PLAYER_HEIGHT_RATIO,
+  };
 }
 
 // --- Debug accessor (used by gameLoop.js when DEBUG_DRAW_HITBOX is enabled) ---

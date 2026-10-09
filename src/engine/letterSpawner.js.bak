@@ -141,57 +141,36 @@ export function updateFallingLetters(deltaTime) {
 /**
  * Spawn a single falling letter.
  * Uses TARGET_LETTER_CHANCE (0.0–1.0) for runtime decision on whether to spawn
- * a target letter or a distractor.
- *
- * NEW LOGIC: When spawning a target letter, randomly pick from UNREVEALED word
- * characters (not always the next needed one). This preserves challenge by allowing
- * players to catch future target letters — they won't lose lives, but progress
- * only advances when the exact next character is caught.
+ * a target letter or a distractor, replacing the static DISTRACTOR_RATIO pool approach.
  */
 function spawnLetter(canvasWidth) {
+  // Decide whether to spawn a target letter or a distractor
+  const isTarget = Math.random() < GameConstants.TARGET_LETTER_CHANCE;
   const revealed = getRevealedCount();
   const word = currentTargetWord?.word;
 
-  // Decide whether to spawn a target letter or a distractor
-  if (Math.random() < GameConstants.TARGET_LETTER_CHANCE && word && revealed < word.length) {
-    // Target spawn — pick ANY unrevealed character from the word
-    const unrevealedChars = [];
-    for (let i = revealed; i < word.length; i++) {
-      unrevealedChars.push(word[i]);
-    }
+  let char, isCorrect;
 
-    const char = unrevealedChars[Math.floor(Math.random() * unrevealedChars.length)];
-
-    const radius = Math.max(20, canvasWidth * GameConstants.LETTER_RADIUS_RATIO);
-
-    fallingLetters.push({
-      x: Math.random() * (canvasWidth - radius * 2) + radius,
-      y: -radius * 2,
-      radius,
-      char,
-    });
-
-    console.log(
-      `[SPAWN] char="${char}" targetWord="${word}" revealedIndex=${revealed}`
-    );
+  if (isTarget && word && revealed < word.length) {
+    // Spawn the next unrevealed target letter
+    char = word[revealed];
+    isCorrect = true;
   } else {
-    // Distractor spawn — pick from Cyrillic alphabet minus current word chars
+    // Spawn a distractor
     const allLetters = getDistractorLetters();
-    const char = allLetters[Math.floor(Math.random() * allLetters.length)];
-
-    const radius = Math.max(20, canvasWidth * GameConstants.LETTER_RADIUS_RATIO);
-
-    fallingLetters.push({
-      x: Math.random() * (canvasWidth - radius * 2) + radius,
-      y: -radius * 2,
-      radius,
-      char,
-    });
-
-    console.log(
-      `[SPAWN] char="${char}" targetWord="${word}" revealedIndex=${revealed}`
-    );
+    char = allLetters[Math.floor(Math.random() * allLetters.length)];
+    isCorrect = false;
   }
+
+  const radius = Math.max(20, canvasWidth * GameConstants.LETTER_RADIUS_RATIO);
+
+  fallingLetters.push({
+    x: Math.random() * (canvasWidth - radius * 2) + radius,
+    y: -radius * 2,
+    radius,
+    char,
+    isCorrect,
+  });
 }
 
 /**
@@ -222,26 +201,12 @@ export function drawFallingLetters(ctx) {
 
 /**
  * Check for collisions between player and falling letters.
- * Returns an array of structured result objects with a 'result' field:
- *   - { char, result: 'perfect' }     — exact needed character caught
- *   - { char, result: 'valid-later' } — letter exists in word but not needed yet
- *   - { char, result: 'wrong' }        — distractor caught (life lost)
- *
- * FIX: Classification is now done DYNAMICALLY at collision time using the CURRENT
- * game state (revealedIndex), NOT from stale spawn-time flags. This ensures that
- * a letter falling for multiple frames is correctly classified even if revealedIndex
- * changes between when it was spawned and when it's caught.
  */
 export function checkCollisions() {
   const hitbox = getPlayerHitbox();
   if (!hitbox) return [];
 
-  // Get current game state — classification uses THIS, not spawn-time data
-  const targetWord = getCurrentTargetWord();
-  const revealed = getRevealedCount();
-  const expectedChar = targetWord?.word[revealed];
-
-  const caughtLetters = [];
+  let caughtLetters = [];
 
   for (let i = fallingLetters.length - 1; i >= 0; i--) {
     const letter = fallingLetters[i];
@@ -261,20 +226,10 @@ export function checkCollisions() {
 
     if (distanceSquared < letter.radius * letter.radius) {
       // Collision detected (tight bounding-box overlap)
-      let result;
-
-      // DYNAMIC classification against CURRENT game state, not spawn-time flags
-      if (expectedChar && letter.char === expectedChar) {
-        // ✅ Perfect catch — matches the character currently needed
-        result = 'perfect';
+      if (letter.isCorrect) {
         playBeep('catch');
-      } else if (targetWord && targetWord.word.includes(letter.char)) {
-        // ⏳ Valid letter — exists in word but not the current needed one
-        result = 'valid-later';
-        playBeep('catch'); // still a satisfying sound, just no progress
+        caughtLetters.push(letter.char);
       } else {
-        // ❌ Distractor — lose life
-        result = 'wrong';
         playBeep('miss');
         gameManager.loseLife();
         if (gameManager.getLives() <= 0) {
@@ -282,15 +237,8 @@ export function checkCollisions() {
         }
       }
 
-      caughtLetters.push({ char: letter.char, result });
-
-      // Remove letter from falling letters immediately to prevent re-triggering
+      // Remove letter from pool immediately to prevent re-triggering
       fallingLetters.splice(i, 1);
-
-      // Log collision details
-      console.log(
-        `[CATCH] char="${letter.char}" result="${result}" revealedIndex=${revealed} expected="${expectedChar}" hitbox={x:${letter.x.toFixed(0)},y:${letter.y.toFixed(0)},r:${letter.radius}} vs player={x:${hitbox.x.toFixed(0)},y:${hitbox.y.toFixed(0)},w:${hitbox.width.toFixed(0)},h:${hitbox.height.toFixed(0)}}`
-      );
     }
   }
 

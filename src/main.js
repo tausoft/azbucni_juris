@@ -104,16 +104,14 @@ function handleKeyboardInput(e) {
 }
 
 /**
- * Handle keyup events — stop player movement when directional keys released.
+ * Handle keyup events — stop player movement when any directional key released.
+ * Guard removed: always stops on directional keyup regardless of game state (Bug #1 fix).
  */
 function handleKeyUp(e) {
-  const state = gameManager.getCurrentState();
-  if (state === GameState.PLAYING) {
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
-        e.key === 'a' || e.key === 'A' ||
-        e.key === 'd' || e.key === 'D') {
-      stopPlayer();
-    }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
+      e.key === 'a' || e.key === 'A' ||
+      e.key === 'd' || e.key === 'D') {
+    stopPlayer();
   }
 }
 

@@ -3,6 +3,7 @@
 // ============================================================
 
 import { GameState, Theme, GameConstants } from './constants.js';
+import { stopPlayer } from './player.js';
 
 class GameStateManager {
   constructor() {
@@ -22,6 +23,13 @@ class GameStateManager {
 
   transitionTo(newState) {
     const prev = this.currentState;
+
+    // Stop player movement when leaving PLAYING state (Bug #1 fix)
+    if (prev === GameState.PLAYING &&
+        (newState === GameState.WORD_COMPLETE || newState === GameState.GAME_OVER)) {
+      stopPlayer();
+    }
+
     this.currentState = newState;
     if (this.onStateChange) {
       this.onStateChange(newState, prev);
