@@ -1,0 +1,266 @@
+{
+  "frames": {
+    "knight-idle-1": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-idle-2": {
+      "frame": {
+        "x": 211,
+        "y": 0,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-idle-3": {
+      "frame": {
+        "x": 422,
+        "y": 0,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-idle-4": {
+      "frame": {
+        "x": 633,
+        "y": 0,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-run-1": {
+      "frame": {
+        "x": 0,
+        "y": 240,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-run-2": {
+      "frame": {
+        "x": 211,
+        "y": 240,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-run-3": {
+      "frame": {
+        "x": 422,
+        "y": 240,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-run-4": {
+      "frame": {
+        "x": 633,
+        "y": 240,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-run-5": {
+      "frame": {
+        "x": 0,
+        "y": 480,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-run-6": {
+      "frame": {
+        "x": 211,
+        "y": 480,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-victory-1": {
+      "frame": {
+        "x": 422,
+        "y": 480,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-victory-2": {
+      "frame": {
+        "x": 633,
+        "y": 480,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-victory-3": {
+      "frame": {
+        "x": 0,
+        "y": 720,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-victory-4": {
+      "frame": {
+        "x": 211,
+        "y": 720,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-victory-5": {
+      "frame": {
+        "x": 422,
+        "y": 720,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-victory-6": {
+      "frame": {
+        "x": 633,
+        "y": 720,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-victory-idle-1": {
+      "frame": {
+        "x": 0,
+        "y": 960,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    },
+    "knight-victory-idle-2": {
+      "frame": {
+        "x": 211,
+        "y": 960,
+        "w": 211,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "sourceSize": {
+        "w": 211,
+        "h": 240
+      }
+    }
+  },
+  "meta": {
+    "app": "https://codeshack.io/images-sprite-sheet-generator/",
+    "image": "spritesheet.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 844,
+      "h": 1200
+    },
+    "scale": "1"
+  }
+}
