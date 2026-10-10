@@ -4,7 +4,7 @@
 
 import { t } from '../i18n/languages.js';
 import gameManager from '../engine/state.js';
-import { GameState } from '../engine/constants.js';
+import { GameState, MinSizes } from '../engine/constants.js';
 import { playBeep } from '../audio/soundEffects.js';
 
 /**
@@ -45,8 +45,8 @@ export function renderMenu(ctx, w, h) {
   roundRect(ctx, btnX, btnY, btnWidth, btnHeight, 12);
   ctx.stroke();
 
-  // Button text
-  const btnFontSize = Math.max(20, btnWidth * 0.08);
+  // Button text — Cyrillic legibility floor of 22px
+  const btnFontSize = Math.max(MinSizes.UI_BUTTON, btnWidth * 0.08);
   ctx.font = `bold ${btnFontSize}px "Segoe UI", Arial, sans-serif`;
   ctx.fillStyle = '#ffffff';
   ctx.fillText(buttonText, w / 2, btnY + btnHeight / 2);

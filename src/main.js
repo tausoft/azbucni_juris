@@ -24,12 +24,16 @@ const ctx = canvas.getContext('2d');
  * Set canvas dimensions to match the actual rendered display size.
  * Uses getBoundingClientRect() to ensure buffer and CSS display stay in sync,
  * preventing HUD coordinate mismatches on mobile/HiDPI screens.
+ * Re-initializes the player so sprite dimensions update with new DPR + canvas size.
  */
 function resizeCanvas() {
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
   canvas.width = Math.floor(rect.width * dpr);
   canvas.height = Math.floor(rect.height * dpr);
+
+  // Re-init player so sprite dimensions update with new DPR + canvas size
+  initPlayer(canvas.width, canvas.height, dpr);
 }
 
 /**
@@ -47,8 +51,9 @@ export function bootstrapApp() {
   // Initialize audio (will activate on first user gesture)
   initAudioEngine();
 
-  // Initialize player with initial theme
-  initPlayer(canvas.width, canvas.height);
+  // Initialize player with initial theme and DPR-aware dimensions
+  const dpr = window.devicePixelRatio || 1;
+  initPlayer(canvas.width, canvas.height, dpr);
 
   // Start the game loop
   startGameLoop(canvas, ctx);

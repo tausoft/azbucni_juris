@@ -4,7 +4,7 @@
 
 import { t } from '../i18n/languages.js';
 import gameManager from '../engine/state.js';
-import { GameState, Theme } from '../engine/constants.js';
+import { GameState, MinSizes, Theme } from '../engine/constants.js';
 import { playBeep } from '../audio/soundEffects.js';
 import { initNewWord } from '../engine/letterSpawner.js';
 
@@ -72,7 +72,7 @@ function drawThemeCard(ctx, x, y, w, h, theme, label) {
   }
 
   // Label
-  const labelFontSize = Math.max(18, w * 0.08);
+  const labelFontSize = Math.max(MinSizes.UI_LABEL, w * 0.08);
   ctx.font = `bold ${labelFontSize}px "Segoe UI", Arial, sans-serif`;
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';

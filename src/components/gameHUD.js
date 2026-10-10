@@ -4,7 +4,7 @@
 
 import { t } from '../i18n/languages.js';
 import gameManager from '../engine/state.js';
-import { GameConstants } from '../engine/constants.js';
+import { GameConstants, MinSizes } from '../engine/constants.js';
 
 let currentWord = null;
 let revealedIndex = 0;
@@ -85,7 +85,7 @@ export function renderWordIntro(ctx, w, h) {
 
   // --- Prompt text below (smaller) ---
   const promptText = t('hud.startPrompt');
-  const promptFontSize = Math.max(24, wordFontSize * 0.55);
+  const promptFontSize = Math.max(MinSizes.UI_PROMPT, wordFontSize * 0.55);
   ctx.font = `${promptFontSize}px "Segoe UI", Arial, sans-serif`;
   ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
   ctx.fillText(promptText, w / 2, h * 0.4 + wordFontSize * 0.8);
@@ -103,7 +103,7 @@ export function renderGameHUD(ctx, w, h) {
   ctx.fillRect(0, 0, w, hudHeight);
 
   // Score display (top-right)
-  const scoreFontSize = Math.max(16, w * 0.025);
+  const scoreFontSize = Math.max(MinSizes.UI_SCORE, w * 0.025);
   ctx.font = `bold ${scoreFontSize}px "Segoe UI", Arial, sans-serif`;
   ctx.textAlign = 'right';
   ctx.fillStyle = '#f1c40f';
@@ -119,7 +119,7 @@ export function renderGameHUD(ctx, w, h) {
 
   // --- Target word displayed above blank slots (top-right area of HUD) ---
   if (currentWord) {
-    const wordFontSize = Math.max(20, hudHeight * 0.28);
+    const wordFontSize = Math.max(MinSizes.UI_PROMPT, hudHeight * 0.28);
     ctx.font = `bold ${wordFontSize}px "Segoe UI", Arial, sans-serif`;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'top';
@@ -153,8 +153,8 @@ export function renderGameHUD(ctx, w, h) {
     roundRect(ctx, slotX, slotY, slotWidth, slotHeight, 8);
     ctx.stroke();
 
-    // Letter text
-    const letterFontSize = Math.max(18, slotWidth * 0.5);
+    // Letter text — minimum 36px for Cyrillic legibility (а/е, о/с, и/н must be distinguishable)
+    const letterFontSize = Math.max(MinSizes.LETTER_FONT, slotWidth * 0.5);
     ctx.font = `bold ${letterFontSize}px "Segoe UI", Arial, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';

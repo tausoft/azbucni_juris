@@ -18,6 +18,16 @@ export const Theme = {
   PRINCESS: 'princess',
 };
 
+// Minimum physical pixel sizes for critical game assets
+export const MinSizes = {
+  PLAYER_WIDTH: 64,       // knight character — below 64px loses detail on mobile
+  LETTER_FONT: 36,        // Cyrillic letter font — needs room to distinguish similar shapes
+  UI_BUTTON: 22,          // menu/end-screen button text — Cyrillic legibility floor
+  UI_SCORE: 20,           // score text — Cyrillic numerals (5, 9) need room
+  UI_PROMPT: 24,          // HUD prompt/instruction text
+  UI_LABEL: 24,           // theme selection labels
+};
+
 // Game dimensions (relative to canvas width)
 export const GameConstants = {
   // Player

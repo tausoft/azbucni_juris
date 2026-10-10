@@ -2,7 +2,7 @@
 // LetterSpawner — falling letter circles, collision detection
 // ============================================================
 
-import { GameConstants, GameState } from './constants.js';
+import { GameConstants, GameState, MinSizes } from './constants.js';
 import gameManager from './state.js';
 import { getPlayerHitbox } from './player.js';
 import { initHUD, revealNextLetter, resetRevealed, getRevealedCount } from '../components/gameHUD.js';
@@ -153,6 +153,9 @@ function spawnLetter(canvasWidth) {
   const word = currentTargetWord?.word;
 
   // Decide whether to spawn a target letter or a distractor
+  // Compute radius first so both branches share the same value
+  const radius = Math.max(MinSizes.LETTER_FONT / 0.8, canvasWidth * GameConstants.LETTER_RADIUS_RATIO);
+
   if (Math.random() < GameConstants.TARGET_LETTER_CHANCE && word && revealed < word.length) {
     // Target spawn — pick ANY unrevealed character from the word
     const unrevealedChars = [];
@@ -162,7 +165,6 @@ function spawnLetter(canvasWidth) {
 
     const char = unrevealedChars[Math.floor(Math.random() * unrevealedChars.length)];
 
-    const radius = Math.max(20, canvasWidth * GameConstants.LETTER_RADIUS_RATIO);
 
     fallingLetters.push({
       x: Math.random() * (canvasWidth - radius * 2) + radius,
@@ -179,7 +181,6 @@ function spawnLetter(canvasWidth) {
     const allLetters = getDistractorLetters();
     const char = allLetters[Math.floor(Math.random() * allLetters.length)];
 
-    const radius = Math.max(20, canvasWidth * GameConstants.LETTER_RADIUS_RATIO);
 
     fallingLetters.push({
       x: Math.random() * (canvasWidth - radius * 2) + radius,

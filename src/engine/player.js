@@ -3,7 +3,7 @@
 // Purpose: Delta-time driven animation using spritesheet + map.json
 // ============================================================
 
-import { GameConstants } from './constants.js';
+import { GameConstants, MinSizes } from './constants.js';
 
 // --- Animation name prefixes (matches JSON key format) ---
 const ANIM = {
@@ -240,6 +240,12 @@ class Player {
 let canvasWidth = 0;
 let canvasHeight = 0;
 
+// --- Module-level DPR — used to keep player dimensions in screen-space (not buffer-space) ---
+let _dpr = window.devicePixelRatio || 1;
+
+// --- True sprite aspect ratio: 211 / 240 ≈ 0.879167 — the spritesheet frame's actual proportions ---
+const BASE_SPRITE_RATIO = 211 / 240;
+
 // --- Debug: track position deltas between frames (fires only on teleport events) ---
 let _lastPlayerX = null;
 const TELEPORT_THRESHOLD = 10; // px — log only when change exceeds this
@@ -247,27 +253,45 @@ const TELEPORT_THRESHOLD = 10; // px — log only when change exceeds this
 // --- Module-level API (mirrors existing gameLoop.js imports) ---
 let player = null;
 
-export function initPlayer(canvasW, canvasH) {
+export function initPlayer(canvasW, canvasH, dpr) {
   // Store canvas dimensions for bounds checking (Phase 2+)
   canvasWidth = canvasW;
   canvasHeight = canvasH;
 
-  // Calculate sprite dimensions from GameConstants ratios
-  const spriteWidth = canvasW * GameConstants.PLAYER_WIDTH_RATIO;   // 6% of canvas width
-  const spriteHeight = canvasH * GameConstants.PLAYER_HEIGHT_RATIO;  // 8% of canvas height
+  // Update DPR (screen-space scaling factor)
+  _dpr = dpr || window.devicePixelRatio || 1;
+
+  // Calculate sprite width from GameConstants ratio (6% of canvas width)
+  const spriteWidthBuffer = canvasW * GameConstants.PLAYER_WIDTH_RATIO;   // buffer-space px
+  // Derive height from the SPRITE'S TRUE aspect ratio (211/240) to prevent distortion.
+  // This ensures the sprite always renders at its correct proportions regardless of canvas aspect ratio.
+  const spriteHeightBuffer = spriteWidthBuffer / BASE_SPRITE_RATIO;         // buffer-space px
+
+  // Divide by DPR to convert from buffer-space to screen-space pixels.
+  // This prevents the sprite from growing on HiDPI screens — it stays locked to screen pixels.
+  let spriteWidthScreen = spriteWidthBuffer / _dpr;
+  let spriteHeightScreen = spriteHeightBuffer / _dpr;
+
+  // Enforce minimum physical pixel size for character readability on mobile.
+  // Below 64px the knight loses face/body/limb detail — it becomes a tiny dot.
+  if (spriteWidthScreen < MinSizes.PLAYER_WIDTH) {
+    const clampedWidth = MinSizes.PLAYER_WIDTH;
+    spriteWidthScreen = clampedWidth;
+    spriteHeightScreen = clampedWidth / BASE_SPRITE_RATIO;
+  }
 
   // Center horizontally, position near bottom (~82% from top)
-  const spriteX = canvasW / 2 - spriteWidth / 2;
+  const spriteX = canvasW / 2 - spriteWidthBuffer / 2;
   const spriteY = canvasH * 0.82;
 
   // Initialize player with calculated dimensions
   player = new Player();
   player.x = spriteX;
   player.y = spriteY;
-  player.width = spriteWidth;
-  player.height = spriteHeight;
+  player.width = spriteWidthScreen;   // screen-space px (DPR-corrected)
+  player.height = spriteHeightScreen;  // screen-space px (DPR-corrected)
 
-  // Set movement speed (Phase 2)
+  // Set movement speed (Phase 2) — use buffer-space canvas width for consistent game feel
   player.speed = canvasW * GameConstants.PLAYER_SPEED_RATIO;   // 30% of canvas width per sec
 
   _lastPlayerX = null; // reset delta tracker
