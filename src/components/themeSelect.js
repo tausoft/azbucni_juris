@@ -7,11 +7,15 @@ import gameManager from '../engine/state.js';
 import { GameState, MinSizes, Theme } from '../engine/constants.js';
 import { playBeep } from '../audio/soundEffects.js';
 import { initNewWord } from '../engine/letterSpawner.js';
+import { renderStaticBackground } from './menu.js';
 
 /**
  * Render the theme selection screen.
  */
-export function renderThemeSelect(ctx, w, h) {
+export function renderThemeSelect(ctx, w, h, background) {
+  // Draw static background behind UI elements
+  renderStaticBackground(ctx, w, h, background);
+
   const title = t('theme.selectTitle');
   const knightLabel = t('theme.knightLabel');
   const princessLabel = t('theme.princessLabel');

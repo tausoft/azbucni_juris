@@ -4,7 +4,7 @@
 
 import { GameState } from './constants.js';
 import gameManager from './state.js';
-import { renderMenu } from '../components/menu.js';
+import { renderMenu, renderStaticBackground } from '../components/menu.js';
 import { renderThemeSelect } from '../components/themeSelect.js';
 import { renderGameHUD, renderWordIntro } from '../components/gameHUD.js';
 import { renderEndScreen } from '../components/endScreen.js';
@@ -21,10 +21,11 @@ window.DEBUG_DRAW_HITBOX = false;
 /**
  * Start the game loop with requestAnimationFrame.
  */
-export function startGameLoop(canvas, ctx) {
-  // Capture canvas and ctx in closure scope for inner functions
+export function startGameLoop(canvas, ctx, background) {
+  // Capture canvas, ctx and background in closure scope for inner functions
   const _canvas = canvas;
   const _ctx = ctx;
+  const _background = background;
 
   lastTime = performance.now();
 
@@ -47,7 +48,7 @@ export function startGameLoop(canvas, ctx) {
     }
 
     // Render current screen
-    renderFrame(_ctx, _canvas, state);
+    renderFrame(_ctx, _canvas, state, _background);
 
     animationId = requestAnimationFrame(gameLoop);
   }
@@ -58,15 +59,26 @@ export function startGameLoop(canvas, ctx) {
 /**
  * Render the current game screen.
  */
-export function renderFrame(ctx, canvas, state) {
+export function renderFrame(ctx, canvas, state, background) {
   const w = canvas.width;
   const h = canvas.height;
 
   // Clear canvas
   ctx.clearRect(0, 0, w, h);
 
-  // Draw themed background
-  drawBackground(ctx, w, h);
+  // Draw background — static for UI screens, parallax for gameplay states
+  const uiStates = [GameState.MENU, GameState.THEME_SELECT];
+  const isUIState = uiStates.includes(state);
+
+  if (background && background.isLoaded) {
+    if (isUIState) {
+      renderStaticBackground(ctx, w, h, background);
+    } else {
+      background.render(ctx, 0, 1);
+    }
+  } else {
+    drawBackground(ctx, w, h);
+  }
 
   switch (state) {
     case GameState.MENU:
@@ -74,7 +86,7 @@ export function renderFrame(ctx, canvas, state) {
       break;
 
     case GameState.THEME_SELECT:
-      renderThemeSelect(ctx, w, h);
+      renderThemeSelect(ctx, w, h, background);
       break;
 
     case GameState.WORD_INTRO:

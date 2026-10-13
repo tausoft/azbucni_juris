@@ -8,6 +8,36 @@ import { GameState, MinSizes } from '../engine/constants.js';
 import { playBeep } from '../audio/soundEffects.js';
 
 /**
+ * Render the static (non-parallax) background layer behind UI screens.
+ * If a loaded BackgroundSystem is provided, uses its static layer; otherwise
+ * falls back to a themed gradient.
+ */
+export function renderStaticBackground(ctx, w, h, background) {
+  if (background && background.isLoaded) {
+    // Render the static (non-scrolling) background layer
+    background.renderStatic(ctx, w, h);
+  } else {
+    // Fallback: draw themed gradient
+    const theme = gameManager.getTheme();
+    let topColor, bottomColor;
+
+    if (theme === 'knight') {
+      topColor = '#1a5276';
+      bottomColor = '#2e86c1';
+    } else {
+      topColor = '#6c3483';
+      bottomColor = '#a569bd';
+    }
+
+    const gradient = ctx.createLinearGradient(0, 0, 0, h);
+    gradient.addColorStop(0, topColor);
+    gradient.addColorStop(1, bottomColor);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, w, h);
+  }
+}
+
+/**
  * Render the main menu screen.
  */
 export function renderMenu(ctx, w, h) {

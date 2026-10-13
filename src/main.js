@@ -5,6 +5,7 @@
 import { GameState } from './engine/constants.js';
 import gameManager from './engine/state.js';
 import { startGameLoop, renderFrame } from './engine/gameLoop.js';
+import { BackgroundSystem } from './engine/background.js';
 import { initPlayer, setDirection, stopPlayer } from './engine/player.js';
 import { initAudioEngine } from './audio/soundEffects.js';
 import { t, setLanguage } from './i18n/languages.js';
@@ -20,6 +21,9 @@ import { getRandomWord } from './data/words.js';
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
+/** Background system instance for parallax layers. */
+const background = new BackgroundSystem();
+
 /**
  * Set canvas dimensions to match the actual rendered display size.
  * Uses getBoundingClientRect() to ensure buffer and CSS display stay in sync,
@@ -34,12 +38,17 @@ function resizeCanvas() {
 
   // Re-init player so sprite dimensions update with new DPR + canvas size
   initPlayer(canvas.width, canvas.height, dpr);
+
+  // Re-calculate background layer scales/positions on viewport change
+  if (background.isLoaded) {
+    background.resize(canvas.width, canvas.height);
+  }
 }
 
 /**
- * Bootstrap: initialize canvas, language, audio, and start the game loop.
+ * Bootstrap: initialize canvas, language, audio, background, and start the game loop.
  */
-export function bootstrapApp() {
+export async function bootstrapApp() {
   // Initialize language from preferences
   const savedLang = gameManager.getLanguage();
   setLanguage(savedLang);
@@ -48,6 +57,19 @@ export function bootstrapApp() {
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
 
+  // Load background assets before starting the game loop
+  try {
+    await background.loadAssets([
+      { name: 'far_bg', path: '/assets/backgrounds/far_bg.png' },
+      { name: 'mid_bg', path: '/assets/backgrounds/mid_bg.png' },
+      { name: 'foreground', path: '/assets/backgrounds/foreground.png' },
+      { name: 'tree', path: '/assets/backgrounds/tree.png' },
+    ]);
+    await background.init(canvas.width, canvas.height);
+  } catch (err) {
+    console.warn('Background assets failed to load, continuing without parallax:', err);
+  }
+
   // Initialize audio (will activate on first user gesture)
   initAudioEngine();
 
@@ -55,8 +77,8 @@ export function bootstrapApp() {
   const dpr = window.devicePixelRatio || 1;
   initPlayer(canvas.width, canvas.height, dpr);
 
-  // Start the game loop
-  startGameLoop(canvas, ctx);
+  // Start the game loop, passing background system for rendering
+  startGameLoop(canvas, ctx, background);
 
   // Handle keyboard input for menu navigation AND player movement
   window.addEventListener('keydown', handleKeyboardInput);
@@ -155,7 +177,7 @@ function handleCanvasTouchMove(e) {
   const x = touch.clientX - rect.left;
 
   // Use a threshold to determine movement direction
-  if (!handleCanvasTouchMove._lastX) {
+  if (handleCanvasTouchMove._lastX === null) {
     handleCanvasTouchMove._lastX = x;
     return;
   }
