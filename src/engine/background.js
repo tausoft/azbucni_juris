@@ -57,7 +57,7 @@ export class BackgroundSystem {
     this.canvasHeight = 0;
 
     // Maximum horizontal shift in pixels (configurable)
-    this.maxParallaxPx = 40;
+    this.maxParallaxPx = 200; // Increased from 40 for visible parallax effect
 
     // Anchor defaults
     this.leftMargin = 32;       // px from left edge for 'left' anchor
@@ -123,9 +123,9 @@ export class BackgroundSystem {
     // Define per-layer configuration
     this.layerConfigs = [
       { name: 'far_bg',       type: LayerType.FILL_CANVAS, parallaxFactor: 0.0 },
-      { name: 'mid_bg',       type: LayerType.FILL_CANVAS, parallaxFactor: 0.05, horizontalOffset: 0.04 },
-      { name: 'foreground',   type: LayerType.POSITIONED, proportionScale: 1, anchor: { x: AnchorX.CENTER, y: AnchorY.BOTTOM }, parallaxFactor: 0.15 },
-      { name: 'tree',         type: LayerType.POSITIONED, proportionScale: 1, anchor: { x: AnchorX.LEFT, y: AnchorY.GROUND }, offScreenLeft: 0.25, verticalOffset: -0.05, parallaxFactor: -0.1 },
+      { name: 'mid_bg',       type: LayerType.FILL_CANVAS, parallaxFactor: 0.1, horizontalOffset: 0.04 },
+      { name: 'foreground',   type: LayerType.POSITIONED, proportionScale: 1.05, anchor: { x: AnchorX.CENTER, y: AnchorY.BOTTOM }, parallaxFactor: 0.2, parallaxPadding: 0 },
+      { name: 'tree',         type: LayerType.POSITIONED, proportionScale: 1, anchor: { x: AnchorX.LEFT, y: AnchorY.GROUND }, offScreenLeft: 0.25, verticalOffset: -0.05, parallaxFactor: 0.18 },
     ];
 
     this._buildLayers();
@@ -143,6 +143,27 @@ export class BackgroundSystem {
     // Clear old layers before rebuilding
     this.layers = [];
     this._buildLayers();
+  }
+
+  /**
+   * Get the Y-coordinate of the far_bg bottom edge (ground level).
+   * Returns canvasHeight as fallback if far_bg is not loaded.
+   * @returns {number} Ground-level Y in buffer-space coordinates
+   */
+  getGroundY() {
+    const farBg = this.layers.find(l => l.image?.src.includes('far_bg'));
+    return farBg ? (farBg.drawY + farBg.drawH) : this.canvasHeight;
+  }
+
+  /**
+   * Get the Y-coordinate of the far_bg top edge.
+   * Useful for computing the visible scene height (sceneBottom - farBgTop).
+   * Returns 0 as fallback if far_bg is not loaded.
+   * @returns {number} Far-bg top Y in buffer-space coordinates
+   */
+  getFarBgTop() {
+    const farBg = this.layers.find(l => l.image?.src.includes('far_bg'));
+    return farBg ? farBg.drawY : 0;
   }
 
   /**
@@ -191,8 +212,11 @@ export class BackgroundSystem {
         displayW / img.naturalWidth,
         displayH / img.naturalHeight
       );
-      const drawW = img.naturalWidth * scale;
+      let drawW = img.naturalWidth * scale;
       const drawH = img.naturalHeight * scale;
+
+      // --- Parallax padding: shift image left so extra width hangs off-screen, absorbing parallax shifts ---
+      const hPad = config.parallaxPadding || 0;
 
       let drawX, drawY;
 
@@ -201,7 +225,8 @@ export class BackgroundSystem {
         // Visible portion starts at background left edge; fraction hangs beyond it into the margin
         drawX = farBgLeftEdge - drawW * config.offScreenLeft;
       } else if (config.anchor?.x === AnchorX.CENTER) {
-        drawX = (this.canvasWidth - drawW) / 2;
+        // Shift left by hPad so both edges extend beyond canvas, absorbing parallax in either direction
+        drawX = (this.canvasWidth - drawW) / 2 - hPad;
       } else if (config.anchor?.x === AnchorX.LEFT) {
         drawX = this.leftMargin;
       }
@@ -263,7 +288,8 @@ export class BackgroundSystem {
     }
 
     // Calculate normalized player position (0 to 1)
-    const normalizedPlayerPos = totalPlayerRange > 0 ? playerX / totalPlayerRange : 0.5;
+    const halfW = this.canvasWidth * 0.06 / 2;
+    const normalizedPlayerPos = totalPlayerRange > 0 ? (playerX - halfW) / totalPlayerRange : 0;
 
     // Enforced render order: farthest layers first, tree before foreground
     const renderOrder = ['far_bg', 'mid_bg', 'tree', 'foreground'];

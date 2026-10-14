@@ -2,13 +2,13 @@
 // Core Game Loop — requestAnimationFrame update/render cycle
 // ============================================================
 
-import { GameState } from './constants.js';
+import { GameState, GameConstants } from './constants.js';
 import gameManager from './state.js';
 import { renderMenu, renderStaticBackground } from '../components/menu.js';
 import { renderThemeSelect } from '../components/themeSelect.js';
 import { renderGameHUD, renderWordIntro } from '../components/gameHUD.js';
 import { renderEndScreen } from '../components/endScreen.js';
-import { updatePlayer, drawPlayer } from './player.js';
+import { updatePlayer, drawPlayer, getDebugPlayerX } from './player.js';
 import { updateFallingLetters, drawFallingLetters } from './letterSpawner.js';
 import { updateScoring } from './scoring.js';
 
@@ -74,7 +74,11 @@ export function renderFrame(ctx, canvas, state, background) {
     if (isUIState) {
       renderStaticBackground(ctx, w, h, background);
     } else {
-      background.render(ctx, 0, 1);
+      // Activate parallax: pass real player X position and playable range
+      const playerX = getDebugPlayerX() ?? 0;
+      const halfW = w * GameConstants.PLAYER_WIDTH_RATIO / 2;
+      const totalRange = w - halfW * 2;
+      background.render(ctx, playerX, totalRange);
     }
   } else {
     drawBackground(ctx, w, h);

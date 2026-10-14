@@ -36,12 +36,18 @@ function resizeCanvas() {
   canvas.width = Math.floor(rect.width * dpr);
   canvas.height = Math.floor(rect.height * dpr);
 
-  // Re-init player so sprite dimensions update with new DPR + canvas size
-  initPlayer(canvas.width, canvas.height, dpr);
-
   // Re-calculate background layer scales/positions on viewport change
   if (background.isLoaded) {
     background.resize(canvas.width, canvas.height);
+    // Derive scene bounds from the far_bg ground level for accurate player Y
+    const sceneBottom = background.getGroundY();
+    const farBgTop = background.getFarBgTop();
+
+    // Re-init player so sprite dimensions update with new DPR + canvas size
+    initPlayer(canvas.width, sceneBottom, farBgTop, canvas.height, dpr);
+  } else {
+    // Fallback: use full canvas height when background hasn't loaded yet
+    initPlayer(canvas.width, canvas.height, 0, canvas.height, dpr);
   }
 }
 
@@ -73,9 +79,16 @@ export async function bootstrapApp() {
   // Initialize audio (will activate on first user gesture)
   initAudioEngine();
 
-  // Initialize player with initial theme and DPR-aware dimensions
+  // Initialize player with scene bounds for accurate vertical alignment
   const dpr = window.devicePixelRatio || 1;
-  initPlayer(canvas.width, canvas.height, dpr);
+  if (background.isLoaded) {
+    const sceneBottom = background.getGroundY();
+    const farBgTop = background.getFarBgTop();
+    initPlayer(canvas.width, sceneBottom, farBgTop, canvas.height, dpr);
+  } else {
+    // Fallback: use full canvas height when background hasn't loaded yet
+    initPlayer(canvas.width, canvas.height, 0, canvas.height, dpr);
+  }
 
   // Start the game loop, passing background system for rendering
   startGameLoop(canvas, ctx, background);

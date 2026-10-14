@@ -31,7 +31,7 @@ export const MinSizes = {
 // Game dimensions (relative to canvas width)
 export const GameConstants = {
   // Player
-  PLAYER_WIDTH_RATIO: 0.06,    // 6% of canvas width
+  PLAYER_WIDTH_RATIO: 0.1,    // 6% of canvas width
   PLAYER_HEIGHT_RATIO: 0.08,   // 8% of canvas height
   PLAYER_SPEED_RATIO: 0.3,     // 30% of canvas width per second
 

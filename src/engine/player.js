@@ -253,7 +253,7 @@ const TELEPORT_THRESHOLD = 10; // px — log only when change exceeds this
 // --- Module-level API (mirrors existing gameLoop.js imports) ---
 let player = null;
 
-export function initPlayer(canvasW, canvasH, dpr) {
+export function initPlayer(canvasW, sceneBottom, farBgTop, canvasH, dpr) {
   // Store canvas dimensions for bounds checking (Phase 2+)
   canvasWidth = canvasW;
   canvasHeight = canvasH;
@@ -280,9 +280,10 @@ export function initPlayer(canvasW, canvasH, dpr) {
     spriteHeightScreen = clampedWidth / BASE_SPRITE_RATIO;
   }
 
-  // Center horizontally, position near bottom (~82% from top)
+  // Center horizontally, position near bottom (~82% of visible scene height from far_bg top)
   const spriteX = canvasW / 2 - spriteWidthBuffer / 2;
-  const spriteY = canvasH * 0.82;
+  const sceneHeight = sceneBottom - farBgTop;
+  const spriteY = farBgTop + sceneHeight * 0.68;
 
   // Initialize player with calculated dimensions
   player = new Player();
