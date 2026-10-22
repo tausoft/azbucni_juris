@@ -1,0 +1,77 @@
+ body {
+  margin: 0;
+  padding: 0;
+ }
+ 
+ #background 
+{ 
+	 left: 0px; 
+	 top: 0px; 
+	 position: relative; 
+	 margin-left: auto; 
+	 margin-right: auto; 
+	 width: 4096px;
+	 height: 2304px; 
+	 overflow: hidden;
+	 z-index:0;
+	} 
+
+ #Layer1 
+{ 
+	 left: 0px; 
+	 top: 0px; 
+	 position: absolute; 
+	 width: 4096px;
+	 height: 2304px;
+	 z-index:1;
+} 
+
+ #Background 
+{ 
+	 left: 91px; 
+	 top: 254px; 
+	 position: absolute; 
+	 width: 3920px;
+	 height: 1902px;
+	 z-index:2;
+} 
+
+ #Layer3 
+{ 
+	 left: 1255px; 
+	 top: 989px; 
+	 position: absolute; 
+	 width: 1588px;
+	 height: 813px;
+	 z-index:3;
+} 
+
+ #Background_0 
+{ 
+	 left: 1429px; 
+	 top: 1048px; 
+	 position: absolute; 
+	 width: 1238px;
+	 height: 696px;
+	 z-index:4;
+} 
+
+ #Background_1 
+{ 
+	 left: 1074px; 
+	 top: 819px; 
+	 position: absolute; 
+	 width: 1949px;
+	 height: 1154px;
+	 z-index:5;
+} 
+
+ #Layer2 
+{ 
+	 left: 91px; 
+	 top: 254px; 
+	 position: absolute; 
+	 width: 3920px;
+	 height: 1902px;
+	 z-index:6;
+} 
